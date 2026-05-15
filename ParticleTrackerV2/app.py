@@ -199,14 +199,14 @@ with tab_track:
         col_setup, col_preview = st.columns([1, 2])
 
         # =================================================
-        # MODE 1: Pick from ROI — ลากกรอบ → ดูดสี
+        # MODE 1: Pick from ROI — ใช้ slider เลือกตำแหน่ง (canvas ไม่ work บน cloud)
         # =================================================
         if "Pick from ROI" in color_mode:
             with col_setup:
                 st.write("**📐 ขั้นตอน:**")
-                st.write("1. ลากกล่องรอบ **marker** ในภาพทางขวา")
-                st.write("2. โปรแกรมจะดูดสีให้อัตโนมัติ")
-                st.write("3. ปรับ tolerance ถ้าต้องการ")
+                st.write("1. ปรับ slider เลือกตำแหน่งและขนาดกรอบ")
+                st.write("2. กรอบสีเหลืองจะปรากฏบนภาพ")
+                st.write("3. โปรแกรมดูดสีให้อัตโนมัติ")
                 st.divider()
 
                 h_tol = st.slider("Hue tolerance (±)", 5, 40, 15,
@@ -216,78 +216,84 @@ with tab_track:
                 min_area = st.slider("Min marker area (pixels)", 10, 1000, 50)
 
             with col_preview:
-                # === Zoom control ===
-                zoom_pct = st.slider(
-                    "🔍 Zoom (%)", min_value=50, max_value=200, value=100, step=10,
-                    help="ขยายภาพให้ลากกรอบ marker ได้ชัดเจน",
-                    key="zoom_pick",
-                )
-                st.write("**ลากกล่องรอบ marker (จะเป็นกล่องสุดท้ายที่วาด):**")
-                try:
-                    from streamlit_drawable_canvas import st_canvas
-                    img = Image.fromarray(ss.first_frame)
-                    base_w = 700
-                    disp_w = int(min(base_w, img.width) * zoom_pct / 100)
-                    disp_h = int(img.height * disp_w / img.width)
+                img_h, img_w = ss.first_frame.shape[:2]
 
-                    st.info(f"📐 Canvas size: {disp_w} × {disp_h} px (จากภาพต้นฉบับ {img.width} × {img.height})")
-
-                    # Dynamic key — re-render เมื่อเปลี่ยน zoom
-                    canvas_key = f"canvas_pick_{zoom_pct}"
-                    canvas_result = st_canvas(
-                        fill_color="rgba(230, 200, 112, 0.15)",
-                        stroke_width=2,
-                        stroke_color="#e6c870",
-                        background_image=img,
-                        update_streamlit=True,
-                        height=disp_h, width=disp_w,
-                        drawing_mode="rect",
-                        key=canvas_key,
+                # ROI position + size sliders
+                st.write("**🎯 ปรับตำแหน่งกรอบ ROI:**")
+                col_x, col_y = st.columns(2)
+                with col_x:
+                    rx_center = st.slider(
+                        "X center (px)", 0, img_w, img_w // 2,
+                        key="roi_x_center",
                     )
-                    scale_x = img.width / disp_w
-                    scale_y = img.height / disp_h
+                with col_y:
+                    ry_center = st.slider(
+                        "Y center (px)", 0, img_h, img_h // 2,
+                        key="roi_y_center",
+                    )
 
-                    if canvas_result.json_data and canvas_result.json_data.get("objects"):
-                        last = canvas_result.json_data["objects"][-1]
-                        rx = int(last["left"] * scale_x)
-                        ry = int(last["top"] * scale_y)
-                        rw = int(last["width"] * scale_x)
-                        rh = int(last["height"] * scale_y)
+                col_w, col_h = st.columns(2)
+                with col_w:
+                    rw_box = st.slider(
+                        "Width (px)", 10, min(300, img_w), 40,
+                        key="roi_w",
+                    )
+                with col_h:
+                    rh_box = st.slider(
+                        "Height (px)", 10, min(300, img_h), 40,
+                        key="roi_h",
+                    )
 
-                        # ดูดสีจาก ROI
-                        ss.color_range = auto_detect_color_from_roi(
-                            ss.first_frame, rx, ry, rw, rh,
-                            h_tolerance=h_tol, s_tolerance=s_tol, v_tolerance=v_tol,
-                        )
-                        ss.color_range.label = "picked_from_roi"
+                # คำนวณ top-left
+                rx = max(0, rx_center - rw_box // 2)
+                ry = max(0, ry_center - rh_box // 2)
+                rw = min(rw_box, img_w - rx)
+                rh = min(rh_box, img_h - ry)
 
-                        # แสดงค่า HSV ที่ดูดมา
-                        st.info(
-                            f"📌 ROI: ({rx}, {ry}, {rw}×{rh}) | "
-                            f"HSV range: H=[{ss.color_range.h_low}-{ss.color_range.h_high}], "
-                            f"S=[{ss.color_range.s_low}-{ss.color_range.s_high}], "
-                            f"V=[{ss.color_range.v_low}-{ss.color_range.v_high}]"
-                        )
+                # วาดกรอบบนภาพ
+                import cv2 as cv2_local
+                img_with_box = ss.first_frame.copy()
+                cv2_local.rectangle(
+                    img_with_box, (rx, ry), (rx + rw, ry + rh),
+                    color=(255, 215, 0), thickness=3,
+                )
+                # วาดกากบาทตรงกลาง
+                cv2_local.drawMarker(
+                    img_with_box, (rx_center, ry_center),
+                    color=(255, 50, 50), markerType=cv2_local.MARKER_CROSS,
+                    markerSize=20, thickness=2,
+                )
 
-                        # แสดง preview
-                        st.write("**Preview (สีเขียวสด = พื้นที่ที่จะถูก track):**")
-                        preview = get_mask_preview(ss.first_frame, ss.color_range)
-                        st.image(preview, use_column_width=True)
+                st.image(img_with_box, caption=f"กรอบ ROI สีทอง — ตำแหน่ง ({rx}, {ry}) ขนาด {rw}×{rh}", use_column_width=True)
 
-                        pos = detect_marker_color_based(
-                            ss.first_frame, ss.color_range, min_area=min_area
-                        )
-                        if pos:
-                            st.success(
-                                f"✅ Marker detected at ({pos[0]:.0f}, {pos[1]:.0f}) "
-                                f"area={pos[2]:.0f}px"
-                            )
-                        else:
-                            st.warning("⚠️ ไม่พบ marker — ลองเพิ่ม tolerance หรือลด min area")
-                    else:
-                        st.info("👆 ลากกล่องรอบ marker บนภาพ")
-                except ImportError:
-                    st.error("ต้องติดตั้ง streamlit-drawable-canvas-fix")
+                # ดูดสีจาก ROI
+                ss.color_range = auto_detect_color_from_roi(
+                    ss.first_frame, rx, ry, rw, rh,
+                    h_tolerance=h_tol, s_tolerance=s_tol, v_tolerance=v_tol,
+                )
+                ss.color_range.label = "picked_from_roi"
+
+                st.info(
+                    f"📌 HSV range: H=[{ss.color_range.h_low}-{ss.color_range.h_high}], "
+                    f"S=[{ss.color_range.s_low}-{ss.color_range.s_high}], "
+                    f"V=[{ss.color_range.v_low}-{ss.color_range.v_high}]"
+                )
+
+                # แสดง preview ของ mask
+                st.write("**Preview (สีเขียวสด = พื้นที่ที่จะถูก track):**")
+                preview = get_mask_preview(ss.first_frame, ss.color_range)
+                st.image(preview, use_column_width=True)
+
+                pos = detect_marker_color_based(
+                    ss.first_frame, ss.color_range, min_area=min_area
+                )
+                if pos:
+                    st.success(
+                        f"✅ Marker detected at ({pos[0]:.0f}, {pos[1]:.0f}) "
+                        f"area={pos[2]:.0f}px"
+                    )
+                else:
+                    st.warning("⚠️ ไม่พบ marker — ลองเพิ่ม tolerance หรือเลื่อนกรอบให้ครอบ marker")
 
         # =================================================
         # MODE 2: Color Preset
@@ -362,58 +368,56 @@ with tab_track:
 
     else:
         st.subheader("🎯 CSRT Object Tracking Setup")
-        st.caption("ลากกล่องรอบ marker ใน frame แรก")
-        zoom_pct_csrt = st.slider(
-            "🔍 Zoom (%)", min_value=50, max_value=200, value=100, step=10,
-            help="ขยายภาพให้ลากกรอบ marker ได้ชัดเจน",
-            key="zoom_csrt",
+        st.caption("ปรับ slider เลือกตำแหน่งและขนาดกรอบ marker ใน frame แรก")
+
+        img_h, img_w = ss.first_frame.shape[:2]
+
+        col_x, col_y = st.columns(2)
+        with col_x:
+            cx_center = st.slider(
+                "X center (px)", 0, img_w, img_w // 2,
+                key="csrt_x_center",
+            )
+        with col_y:
+            cy_center = st.slider(
+                "Y center (px)", 0, img_h, img_h // 2,
+                key="csrt_y_center",
+            )
+
+        col_w, col_h = st.columns(2)
+        with col_w:
+            cw_box = st.slider(
+                "Width (px)", 20, min(400, img_w), 80,
+                key="csrt_w",
+            )
+        with col_h:
+            ch_box = st.slider(
+                "Height (px)", 20, min(400, img_h), 80,
+                key="csrt_h",
+            )
+
+        # คำนวณ top-left + วาดกรอบบนภาพ
+        bx = max(0, cx_center - cw_box // 2)
+        by = max(0, cy_center - ch_box // 2)
+        bw = min(cw_box, img_w - bx)
+        bh = min(ch_box, img_h - by)
+
+        import cv2 as cv2_local
+        img_with_box = ss.first_frame.copy()
+        cv2_local.rectangle(
+            img_with_box, (bx, by), (bx + bw, by + bh),
+            color=(255, 215, 0), thickness=3,
+        )
+        cv2_local.drawMarker(
+            img_with_box, (cx_center, cy_center),
+            color=(255, 50, 50), markerType=cv2_local.MARKER_CROSS,
+            markerSize=20, thickness=2,
         )
 
-        # Try to import canvas — if fails, fallback to number inputs
-        canvas_available = False
-        try:
-            from streamlit_drawable_canvas import st_canvas
-            canvas_available = True
-        except ImportError:
-            st.error("📦 ไม่พบ streamlit-drawable-canvas-fix — ใช้ manual input แทน")
+        st.image(img_with_box, caption=f"กรอบ marker สีทอง — ตำแหน่ง ({bx}, {by}) ขนาด {bw}×{bh}", use_column_width=True)
 
-        if canvas_available:
-            img = Image.fromarray(ss.first_frame)
-            base_w = 700
-            disp_w = int(min(base_w, img.width) * zoom_pct_csrt / 100)
-            disp_h = int(img.height * disp_w / img.width)
-
-            st.info(f"📐 Canvas size: {disp_w} × {disp_h} px (จากภาพต้นฉบับ {img.width} × {img.height})")
-
-            # Dynamic key — บังคับให้ canvas re-render เมื่อเปลี่ยน zoom
-            canvas_key = f"canvas_csrt_{zoom_pct_csrt}"
-            canvas_result = st_canvas(
-                fill_color="rgba(230, 200, 112, 0.2)",
-                stroke_width=2, stroke_color="#e6c870",
-                background_image=img, update_streamlit=True,
-                height=disp_h, width=disp_w, drawing_mode="rect",
-                key=canvas_key,
-            )
-            scale_x = img.width / disp_w
-            scale_y = img.height / disp_h
-            if canvas_result.json_data and canvas_result.json_data.get("objects"):
-                last_rect = canvas_result.json_data["objects"][-1]
-                x = int(last_rect["left"] * scale_x)
-                y = int(last_rect["top"] * scale_y)
-                w = int(last_rect["width"] * scale_x)
-                h = int(last_rect["height"] * scale_y)
-                ss.init_bbox = (x, y, w, h)
-                st.success(f"✅ Bounding box: ({x}, {y}, {w}×{h})")
-            else:
-                st.caption("👆 ลากกล่องสี่เหลี่ยมรอบ marker บนภาพ")
-        else:
-            col_a, col_b, col_c, col_d = st.columns(4)
-            x = col_a.number_input("X", 0, ss.first_frame.shape[1], 100)
-            y = col_b.number_input("Y", 0, ss.first_frame.shape[0], 100)
-            w = col_c.number_input("W", 10, 500, 100)
-            h = col_d.number_input("H", 10, 500, 100)
-            ss.init_bbox = (int(x), int(y), int(w), int(h))
-            st.image(ss.first_frame, use_column_width=True)
+        ss.init_bbox = (bx, by, bw, bh)
+        st.success(f"✅ Bounding box: ({bx}, {by}, {bw}×{bh})")
 
 # ===================== TAB 3: TRACK =====================
 with tab_run:
@@ -544,24 +548,18 @@ with tab_results:
         # X axis trace
         fig_pos.add_trace(go.Scatter(
             x=df["time_sec"], y=df[x_col],
-            name="x",
-            mode="lines+markers",                            # ← เพิ่ม
-            line=dict(
-                color="#00AE14",
-                width=1.5 if analysis_axis == "x" else 1.2,
+            name="x", line=dict(
+                color="#3b82f6",
+                width=2.5 if analysis_axis == "x" else 1.2,
             ),
-            marker=dict(size=6, symbol="circle"),            # ← เพิ่ม
         ), row=1, col=1)
         # Y axis trace
         fig_pos.add_trace(go.Scatter(
             x=df["time_sec"], y=df[y_col],
-            name="y",
-            mode="lines+markers",                            # ← เพิ่ม
-            line=dict(
+            name="y", line=dict(
                 color="#ef4444",
-                width=1.5 if analysis_axis == "y" else 1.2,
+                width=2.5 if analysis_axis == "y" else 1.2,
             ),
-            marker=dict(size=6, symbol="circle"),            # ← เพิ่ม
         ), row=2, col=1)
         # Peak markers — แสดงบนแกนที่วิเคราะห์
         if is_plus and ss.time_result and ss.time_result.n_peaks > 0:
@@ -621,7 +619,7 @@ with tab_results:
             ))
             fig_fft.add_vline(
                 x=fft.dominant_freq,
-                line=dict(color="#ed00d9", dash="dash", width=2),
+                line=dict(color="#e6c870", dash="dash", width=2),
                 annotation_text=f"f = {fft.dominant_freq:.3f} Hz",
                 annotation_position="top",
             )
@@ -658,26 +656,21 @@ with tab_results:
             env_neg = -fr.A * np.exp(-fr.gamma * t) + fr.offset
 
             fig_fit = go.Figure()
-            # Data — เปลี่ยนเป็น lines+markers
             fig_fit.add_trace(go.Scatter(
-                x=t, y=x_data,
-                mode="lines+markers",                            # ← เปลี่ยน
-                line=dict(color="#3a7ff6", width=1),
-                marker=dict(size=8, symbol="circle"),            # ← เพิ่ม
-                name="Data",
+                x=t, y=x_data, mode="lines",
+                line=dict(color="#9eb0d0", width=1), name="Data",
             ))
-            # Fit trace — เก็บเดิม (เส้นเรียบสวยกว่า)
             fig_fit.add_trace(go.Scatter(
                 x=t, y=x_fit, mode="lines",
-                line=dict(color="#ead0d0", width=1), name="Fit",
+                line=dict(color="#ef4444", width=2), name="Fit",
             ))
             fig_fit.add_trace(go.Scatter(
                 x=t, y=env_pos, mode="lines",
-                line=dict(color="#d05212", dash="dash", width=1.5), name="Envelope",
+                line=dict(color="#e6c870", dash="dash", width=1.5), name="Envelope",
             ))
             fig_fit.add_trace(go.Scatter(
                 x=t, y=env_neg, mode="lines",
-                line=dict(color="#d1571b", dash="dash", width=1.5), showlegend=False,
+                line=dict(color="#e6c870", dash="dash", width=1.5), showlegend=False,
             ))
             fig_fit.update_layout(
                 xaxis_title="Time (s)", yaxis_title=f"Position ({unit})",
