@@ -2,7 +2,7 @@
 # University of Phayao | Physics Department
 
 [server]
-maxUploadSize = 1024
+maxUploadSize = 400
 headless = true
 
 [browser]
