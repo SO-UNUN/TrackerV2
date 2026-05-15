@@ -19,7 +19,7 @@ scipy>=1.11.0
 plotly>=5.17.0
 
 # ROI selection (drawable canvas — fix for new Streamlit)
-streamlit-drawable-canvas-fix>=0.9.8
+
 
 # ===============================================================
 # Installation:
