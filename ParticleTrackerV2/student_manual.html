@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือนักศึกษา — SHM Motion Tracker | UP</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a1024;--bg2:#11183a;--bg3:#1a2349;--card:#13193b;--bdr:#2a3865;--gold:#e6c870;--blue:#3b82f6;--green:#34d399;--red:#f87171;--orange:#f59e0b;--purple:#a78bfa;--txt:#e6ecf5;--txt2:#9eb0d0;--txt3:#5a6f95;--body:'Sarabun',sans-serif;--mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--txt);font-family:var(--body);line-height:1.85;font-size:16px}::selection{background:var(--gold);color:var(--bg)}a{color:var(--gold);text-decoration:none}a:hover{color:#fff}
+.hdr{background:linear-gradient(180deg,var(--bg2),var(--bg));padding:3.5rem 2rem 2.5rem;text-align:center;border-bottom:2px solid var(--gold)}.hdr-badge{font-family:var(--mono);font-size:.68rem;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;padding:.3rem .9rem;border:1px solid rgba(230,200,112,.4);border-radius:99px;display:inline-block;margin-bottom:.9rem}.hdr h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:600;margin-bottom:.4rem}.hdr h1 span{color:var(--gold)}.hdr-sub{color:var(--txt2);font-size:.95rem;max-width:640px;margin:0 auto}
+.nav{position:sticky;top:0;z-index:99;background:rgba(10,16,36,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--gold);padding:.55rem 1rem;display:flex;gap:.4rem;overflow-x:auto;white-space:nowrap;justify-content:center}.nav a{font-size:.8rem;padding:.35rem .8rem;border-radius:6px;border:1px solid var(--bdr);color:var(--txt2);transition:.2s;flex-shrink:0}.nav a:hover{border-color:var(--gold);color:var(--gold);background:rgba(230,200,112,.06)}
+.wrap{max-width:860px;margin:0 auto;padding:0 1.5rem 4rem}section{padding-top:2.8rem}h2{font-size:1.5rem;font-weight:600;margin-bottom:.6rem;color:var(--txt)}h2 .tag{font-family:var(--mono);font-size:.62rem;display:block;color:var(--gold);letter-spacing:.13em;text-transform:uppercase;margin-bottom:.1rem}h3{font-size:1.05rem;font-weight:600;color:var(--gold);margin:1.4rem 0 .4rem}p{color:var(--txt2);margin-bottom:.6rem}
+.vc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:1.1rem 1.3rem;margin:.8rem 0}.vc-title{font-weight:600;color:var(--gold);margin-bottom:.5rem;font-size:.95rem}.vc p{font-size:.9rem;margin-bottom:.35rem}
+.flow{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0}.flow-step{background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;padding:.55rem 1rem;font-size:.88rem;color:var(--txt);display:flex;align-items:center;gap:.4rem}.flow-step .icon{font-size:1.15rem}.flow-arr{color:var(--gold);font-size:1.2rem}
+.note{border-radius:8px;padding:.85rem 1rem;margin:.7rem 0;font-size:.88rem;display:flex;gap:.55rem;align-items:flex-start}.note.info{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);color:var(--blue)}.note.warn{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);color:var(--orange)}.note.ok{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);color:var(--green)}.ni{font-size:1rem;flex-shrink:0}
+.formula{background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;padding:1.1rem 1.3rem;margin:.8rem 0;text-align:center;font-size:1.2rem;font-weight:600;color:var(--gold);font-family:var(--mono)}.formula small{display:block;font-size:.78rem;color:var(--txt3);font-weight:400;margin-top:.4rem;line-height:1.6}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.9rem 0}.modes .mode{background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;padding:1rem;text-align:center}.modes .mode .name{font-weight:600;color:var(--gold);font-size:1rem;margin-bottom:.3rem}.modes .mode .desc{font-size:.78rem;color:var(--txt3);line-height:1.55}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--bg);font-size:.85rem;font-weight:700;margin-right:.5rem;flex-shrink:0}
+code{font-family:var(--mono);background:rgba(230,200,112,.08);color:var(--gold);padding:.1rem .3rem;border-radius:3px;font-size:.84rem}
+.trouble dt{font-weight:600;color:var(--red);font-size:.92rem;margin-top:.8rem;padding-top:.5rem;border-top:1px solid rgba(248,113,113,.1)}.trouble dt:first-child{border-top:none;padding-top:0}.trouble dd{color:var(--txt2);font-size:.9rem;margin-left:1rem;margin-bottom:.2rem}.trouble dd::before{content:'→ ';color:var(--green)}
+footer{text-align:center;padding:2rem;border-top:1px solid var(--gold);color:var(--txt3);font-size:.78rem;margin-top:2rem}
+@media(max-width:640px){.wrap{padding:0 1rem 3rem}.modes{grid-template-columns:1fr}.flow{flex-direction:column;align-items:flex-start}.flow-arr{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-badge">คู่มือนักศึกษา</div>
+  <h1>SHM <span>Motion Tracker</span></h1>
+  <p class="hdr-sub">วิเคราะห์การเคลื่อนที่แบบ Simple Harmonic Motion จากวิดีโอ<br>University of Phayao · Faculty of Science · Physics Department</p>
+</div>
+<div class="nav">
+  <a href="#about">เกี่ยวกับ</a>
+  <a href="#theory">หลักการ SHM</a>
+  <a href="#preparation">เตรียมการ</a>
+  <a href="#modes">3 โหมด</a>
+  <a href="#workflow">วิธีใช้</a>
+  <a href="#fft">FFT & Damped</a>
+  <a href="#trouble">แก้ปัญหา</a>
+</div>
+<div class="wrap">
+
+<section id="about">
+<h2><span class="tag">ส่วนที่ 1</span>เกี่ยวกับโปรแกรม</h2>
+<p>โปรแกรมนี้ใช้วิเคราะห์การเคลื่อนที่แบบ Simple Harmonic Motion (SHM) จากวิดีโอ เช่น มวลติดสปริงสั่นขึ้นลง โดยติดตามตำแหน่งของ marker (สติ๊กเกอร์สีหรือวัตถุที่มีสีเด่น) แล้ววิเคราะห์ทั้ง time domain และ frequency domain</p>
+<div class="vc">
+<div class="vc-title">🌊 โปรแกรมนี้ทำอะไรได้?</div>
+<p>✅ อ่านวิดีโอ และติดตามตำแหน่ง marker อัตโนมัติ</p>
+<p>✅ คำนวณ Period (T), Frequency (f), Amplitude</p>
+<p>✅ FFT spectrum (โหมด Advanced)</p>
+<p>✅ Fit damped oscillator + คำนวณ Q, ζ</p>
+<p>✅ คำนวณ Spring constant k จากมวล m</p>
+<p>✅ Export CSV และ JSON</p>
+</div>
+</section>
+
+<section id="theory">
+<h2><span class="tag">ส่วนที่ 2</span>หลักการ Simple Harmonic Motion</h2>
+<h3>สมการ SHM พื้นฐาน</h3>
+<div class="formula">x(t) = A·cos(ωt + φ)
+<small>A = amplitude (cm), ω = 2πf (rad/s), φ = phase (rad)</small></div>
+
+<h3>SHM ของมวลติดสปริง</h3>
+<div class="formula">ω₀ = √(k/m),&nbsp;&nbsp;T = 2π√(m/k)
+<small>k = spring constant (N/m), m = mass (kg)</small></div>
+
+<h3>Damped Harmonic Oscillator</h3>
+<p>เมื่อมีแรงต้าน การสั่นจะค่อยๆ ลดลง:</p>
+<div class="formula">x(t) = A·e^(-γt)·cos(ωt + φ) + offset
+<small>γ = damping coefficient (1/s), ζ = γ/ω₀ = damping ratio</small></div>
+
+<h3>Quality Factor (Q)</h3>
+<div class="formula">Q = ω / (2γ)
+<small>Q สูง = damping ต่ำ การสั่นนาน</small></div>
+
+<div class="note info"><span class="ni">📚</span><div><strong>การตีความ Q:</strong> Q ≈ จำนวนรอบที่ amplitude ลดเหลือ 37% (1/e)<br>Q = 10 — damping พอประมาณ | Q = 100 — น้อยมาก (tuning fork) | Q &lt; 1 — overdamped</div></div>
+</section>
+
+<section id="preparation">
+<h2><span class="tag">ส่วนที่ 3</span>การเตรียมการทดลอง</h2>
+
+<div class="vc">
+<div class="vc-title">🎨 การทำ Marker</div>
+<p>1️⃣ ใช้สติ๊กเกอร์สีสด เช่น เขียวสด ส้ม แดง (contrast กับพื้นหลัง)</p>
+<p>2️⃣ Marker ขนาด <strong>1-3 cm²</strong> เพียงพอ</p>
+<p>3️⃣ ติดที่ <strong>จุดศูนย์มวล</strong> ของวัตถุ</p>
+<p>4️⃣ พื้นหลังสีตรงข้าม เช่น ผ้าขาวหรือกระดาษ</p>
+</div>
+
+<div class="vc">
+<div class="vc-title">📱 ตั้งค่ากล้อง</div>
+<p>1️⃣ ใช้ manual mode (Open Camera, ProCam)</p>
+<p>2️⃣ ล็อค exposure + WB + focus ก่อนถ่าย</p>
+<p>3️⃣ Frame rate: 30 fps พอสำหรับสปริงทั่วไป (f &lt; 3 Hz)</p>
+<p>4️⃣ Resolution 720p หรือ 1080p เพียงพอ</p>
+</div>
+
+<div class="vc">
+<div class="vc-title">📐 การจัดวาง</div>
+<p>1️⃣ ใช้ <strong>ขาตั้งกล้อง</strong> — กล้องต้องนิ่งสนิท</p>
+<p>2️⃣ กล้องตั้งฉากกับระนาบการสั่น</p>
+<p>3️⃣ วาง <strong>ไม้บรรทัด</strong> ในเฟรมเป็น scale reference</p>
+<p>4️⃣ บันทึกอย่างน้อย 5-10 รอบของการสั่น</p>
+</div>
+
+<div class="note warn"><span class="ni">⚠️</span><div><strong>การเลือก Frame Rate:</strong><br>
+• สปริงปกติ (f &lt; 3 Hz) → 30 fps พอ<br>
+• สปริงแข็ง (f = 3-10 Hz) → 60 fps<br>
+• ตามกฎ Nyquist: frame rate ต้องอย่างน้อย <strong>10 เท่า</strong>ของความถี่ที่จะวัด</div></div>
+</section>
+
+<section id="modes">
+<h2><span class="tag">ส่วนที่ 4</span>3 โหมดการใช้งาน</h2>
+<div class="modes">
+  <div class="mode"><div class="name">Core</div><div class="desc">Tracking + plot x(t), y(t)</div></div>
+  <div class="mode"><div class="name">Plus</div><div class="desc">+ period detection + phase space</div></div>
+  <div class="mode"><div class="name">Advanced</div><div class="desc">+ FFT + damped fit + spring constant</div></div>
+</div>
+
+<div class="vc">
+<div class="vc-title">🟢 Core — ภาพรวมการสั่น</div>
+<p>เหมาะกับ: ดูภาพรวม สำรวจข้อมูล</p>
+<p>สิ่งที่ได้: กราฟ x(t), y(t)</p>
+</div>
+
+<div class="vc">
+<div class="vc-title">🔵 Plus — งานทดลองทั่วไป</div>
+<p>เหมาะกับ: คำนวณ T, f, amplitude</p>
+<p>สิ่งที่ได้เพิ่ม: peak detection, phase space (x vs velocity)</p>
+</div>
+
+<div class="vc">
+<div class="vc-title">🟡 Advanced — งานวิจัย</div>
+<p>เหมาะกับ: วิเคราะห์ damping, หา k</p>
+<p>สิ่งที่ได้เพิ่ม: FFT spectrum, damped fit, Q, ζ, k</p>
+</div>
+</section>
+
+<section id="workflow">
+<h2><span class="tag">ส่วนที่ 5</span>วิธีใช้งานทีละขั้นตอน</h2>
+<div class="flow">
+  <div class="flow-step"><span class="icon">📤</span> Upload</div>
+  <span class="flow-arr">→</span>
+  <div class="flow-step"><span class="icon">🎯</span> Marker</div>
+  <span class="flow-arr">→</span>
+  <div class="flow-step"><span class="icon">🚀</span> Track</div>
+  <span class="flow-arr">→</span>
+  <div class="flow-step"><span class="icon">📊</span> Results</div>
+</div>
+
+<div class="vc">
+<div class="vc-title"><span class="step-num">1</span> เปิดโปรแกรม</div>
+<p>ดับเบิ้ลคลิก <code>start_app.bat</code> (Windows) หรือ <code>streamlit run app.py</code></p>
+</div>
+
+<div class="vc">
+<div class="vc-title"><span class="step-num">2</span> ตั้งค่าใน Sidebar</div>
+<p><strong>Mode:</strong> Core / Plus / Advanced</p>
+<p><strong>Tracking:</strong> Color-based (แนะนำ) หรือ CSRT</p>
+<p><strong>Sampling:</strong> Auto (แนะนำ)</p>
+<p><strong>Pixels per cm:</strong> ใส่จากไม้บรรทัดในเฟรม</p>
+<p><strong>Mass (Advanced):</strong> น้ำหนักวัตถุ (gram)</p>
+</div>
+
+<div class="vc">
+<div class="vc-title"><span class="step-num">3</span> Upload วิดีโอ (Tab 1)</div>
+<p>เลือกไฟล์ → ดูข้อมูล fps, duration</p>
+<p>โปรแกรมแสดงประมาณการ "จับความถี่ได้สูงสุด" จาก Nyquist</p>
+</div>
+
+<div class="vc">
+<div class="vc-title"><span class="step-num">4</span> Marker Setup (Tab 2)</div>
+<p>เลือก preset สี → ดู preview ทางขวา</p>
+<p>พื้นที่สีเขียวสด = ที่จะถูก track</p>
+<p>ปรับ HSV range จนเหลือเฉพาะ marker</p>
+</div>
+
+<div class="vc">
+<div class="vc-title"><span class="step-num">5</span> Track (Tab 3)</div>
+<p>กด <strong>START TRACKING</strong> → progress bar</p>
+<p>ดู % success — ควร &gt; 95%</p>
+</div>
+
+<div class="vc">
+<div class="vc-title"><span class="step-num">6</span> ดูผล (Tab 4)</div>
+<p>📈 Position vs Time | 📐 T, f, amplitude</p>
+<p>🌀 Phase space (Plus)</p>
+<p>📊 FFT spectrum (Advanced)</p>
+<p>🌊 Damped fit + Q, ζ, R² (Advanced)</p>
+<p>🔬 Spring constant k (ถ้าใส่ mass)</p>
+<p>💾 Download CSV และ JSON</p>
+</div>
+</section>
+
+<section id="fft">
+<h2><span class="tag">ส่วนที่ 6</span>การตีความ FFT และ Damped Fit</h2>
+
+<h3>📊 FFT Spectrum</h3>
+<p>FFT แปลงสัญญาณ time domain → frequency domain แสดง amplitude ที่แต่ละ frequency</p>
+<div class="vc">
+<p>🟢 <strong>Single peak ชัด</strong> — SHM แบบเดียว frequency ตรงกับ peak counting</p>
+<p>🟡 <strong>Multiple peaks</strong> — มี harmonics หรือ multiple modes</p>
+<p>🔴 <strong>Spectrum กระจาย</strong> — noise สูง หรือไม่ใช่ periodic motion</p>
+</div>
+
+<h3>🌊 Damped Oscillator Fit</h3>
+<div class="formula">x(t) = A·e^(-γt)·cos(ωt + φ) + offset</div>
+
+<div class="vc">
+<div class="vc-title">การตีความ R²</div>
+<p>🟢 R² ≥ 0.99 — Excellent, damped SHM แท้</p>
+<p>🔵 R² ≥ 0.95 — Good ใช้ได้ในงานทั่วไป</p>
+<p>🟡 R² &lt; 0.95 — มี deviation จาก SHM</p>
+</div>
+
+<div class="vc">
+<div class="vc-title">การตีความ Damping Ratio ζ</div>
+<p>ζ &lt; 1: <strong>Underdamped</strong> — มีการสั่น (ปกติของสปริง)</p>
+<p>ζ = 1: <strong>Critically damped</strong> — กลับสมดุลเร็วสุด ไม่สั่น</p>
+<p>ζ &gt; 1: <strong>Overdamped</strong> — กลับสมดุลช้า ไม่สั่น</p>
+</div>
+
+<h3>🔬 Spring Constant Calculation</h3>
+<div class="formula">k = (2πf₀)²·m
+<small>f₀ = natural frequency, m = mass (kg)</small></div>
+
+<p>เปรียบเทียบกับ static method (แขวนน้ำหนัก + วัดระยะยืด):</p>
+<div class="formula">k = mg / Δx
+<small>g = 9.81 m/s², Δx = ระยะยืด</small></div>
+
+<div class="note info"><span class="ni">💡</span><div><strong>การทดลองที่น่าสนใจ:</strong><br>
+1. เทียบ k จาก SHM (dynamic) vs static method<br>
+2. ศึกษา Q ที่ amplitude ต่างๆ<br>
+3. เปลี่ยนตัวกลาง (อากาศ vs น้ำ) ดู damping ratio<br>
+4. ใช้สปริงต่างๆ สร้าง calibration table</div></div>
+</section>
+
+<section id="trouble">
+<h2><span class="tag">ส่วนที่ 7</span>การแก้ปัญหา</h2>
+<dl class="trouble">
+  <dt>Marker tracking หลุดบ่อย</dt>
+  <dd>ปรับ HSV range ให้ตรงสี marker</dd>
+  <dd>ลด min_area ถ้า marker เล็ก</dd>
+  <dd>ตรวจว่าแสงคงที่ตลอดวิดีโอ</dd>
+  <dd>ลองเปลี่ยนเป็น CSRT tracker</dd>
+
+  <dt>Period/Frequency ดูแปลก</dt>
+  <dd>ตรวจ peaks ในกราฟ — false peaks ให้เพิ่ม smoothing</dd>
+  <dd>ใช้ Advanced mode เทียบ time vs FFT</dd>
+  <dd>ตรวจ pixels_per_cm มีผลต่อ amplitude</dd>
+
+  <dt>FFT spectrum noisy</dt>
+  <dd>ถ่ายวิดีโอนานขึ้น (Δf = fs/N)</dd>
+  <dd>ตรวจ tracking success &gt; 95%</dd>
+
+  <dt>Damped fit R² ต่ำ</dt>
+  <dd>การสั่นอาจไม่ใช่ damped SHM แท้</dd>
+  <dd>amplitude สูงเกินไป → spring ไม่ linear</dd>
+
+  <dt>Spring constant ผิดจากค่าจริงมาก</dt>
+  <dd>รวมน้ำหนัก marker + holder ใน mass</dd>
+  <dd>ใช้ natural f₀ (ไม่ใช่ damped f)</dd>
+  <dd>เปรียบเทียบกับ static method</dd>
+
+  <dt>RAM ไม่พอ / โปรแกรมช้า</dt>
+  <dd>ใช้ Auto sampling (downsample 60 fps)</dd>
+  <dd>ตัดวิดีโอสั้น (10-30 วินาที พอ)</dd>
+</dl>
+</section>
+
+</div>
+<footer>
+  SHM Motion Tracker — Video-based SHM Analysis<br>
+  University of Phayao · Faculty of Science · Physics Department
+</footer>
+</body>
+</html>
