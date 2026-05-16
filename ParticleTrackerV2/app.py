@@ -568,7 +568,7 @@ with tab_results:
             v = np.gradient(x, t)
             fig_ps = go.Figure()
             fig_ps.add_trace(go.Scatter(
-                x=x, y=v, mode="markers",
+                x=x, y=v, mode="lines+markers",
                 marker=dict(color=t, colorscale="Viridis", size=3,
                             showscale=True, colorbar=dict(title="Time (s)")),
             ))
