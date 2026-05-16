@@ -632,7 +632,7 @@ with tab_results:
 
             fig_fit = go.Figure()
             fig_fit.add_trace(go.Scatter(
-                x=t, y=x_data, mode="lines",
+                x=t, y=x_data, mode="markers",
                 line=dict(color="#9eb0d0", width=1), name="Data",
             ))
             fig_fit.add_trace(go.Scatter(
