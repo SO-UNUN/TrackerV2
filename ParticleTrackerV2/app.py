@@ -367,10 +367,10 @@ with tab_track:
             cropped_box = st_cropper(
                 img_pil,
                 realtime_update=True,
-                box_color="#12d022",
+                box_color="#00bb03",
                 aspect_ratio=None,
                 return_type="box",
-                stroke_width=3,
+                stroke_width=1,
                 key="cropper_csrt",
             )
 
