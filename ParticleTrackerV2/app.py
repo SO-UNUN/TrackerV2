@@ -199,13 +199,13 @@ with tab_track:
         col_setup, col_preview = st.columns([1, 2])
 
         # =================================================
-        # MODE 1: Pick from ROI — ใช้ slider เลือกตำแหน่ง (canvas ไม่ work บน cloud)
+        # MODE 1: Pick from ROI — ใช้ streamlit-cropper (ลากกรอบ interactive)
         # =================================================
         if "Pick from ROI" in color_mode:
             with col_setup:
                 st.write("**📐 ขั้นตอน:**")
-                st.write("1. ปรับ slider เลือกตำแหน่งและขนาดกรอบ")
-                st.write("2. กรอบสีเหลืองจะปรากฏบนภาพ")
+                st.write("1. **ลากกรอบสีแดง** บนภาพให้ครอบ marker")
+                st.write("2. **ปรับขนาด**โดยลากขอบกรอบ")
                 st.write("3. โปรแกรมดูดสีให้อัตโนมัติ")
                 st.divider()
 
@@ -216,84 +216,72 @@ with tab_track:
                 min_area = st.slider("Min marker area (pixels)", 10, 1000, 50)
 
             with col_preview:
-                img_h, img_w = ss.first_frame.shape[:2]
+                try:
+                    from streamlit_cropper import st_cropper
 
-                # ROI position + size sliders
-                st.write("**🎯 ปรับตำแหน่งกรอบ ROI:**")
-                col_x, col_y = st.columns(2)
-                with col_x:
-                    rx_center = st.slider(
-                        "X center (px)", 0, img_w, img_w // 2,
-                        key="roi_x_center",
-                    )
-                with col_y:
-                    ry_center = st.slider(
-                        "Y center (px)", 0, img_h, img_h // 2,
-                        key="roi_y_center",
-                    )
+                    img_h, img_w = ss.first_frame.shape[:2]
+                    img_pil = Image.fromarray(ss.first_frame)
 
-                col_w, col_h = st.columns(2)
-                with col_w:
-                    rw_box = st.slider(
-                        "Width (px)", 10, min(300, img_w), 40,
-                        key="roi_w",
-                    )
-                with col_h:
-                    rh_box = st.slider(
-                        "Height (px)", 10, min(300, img_h), 40,
-                        key="roi_h",
+                    st.write("**🎯 ลากกรอบแดงให้ครอบ marker:**")
+
+                    # st_cropper จะ resize ภาพให้พอดี container
+                    # box_algorithm=None → ผู้ใช้ลากเอง
+                    cropped_box = st_cropper(
+                        img_pil,
+                        realtime_update=True,
+                        box_color="#ff4444",
+                        aspect_ratio=None,
+                        return_type="box",  # คืน {left, top, width, height}
+                        stroke_width=3,
+                        key="cropper_pick",
                     )
 
-                # คำนวณ top-left
-                rx = max(0, rx_center - rw_box // 2)
-                ry = max(0, ry_center - rh_box // 2)
-                rw = min(rw_box, img_w - rx)
-                rh = min(rh_box, img_h - ry)
+                    if cropped_box is not None:
+                        rx = int(cropped_box["left"])
+                        ry = int(cropped_box["top"])
+                        rw = int(cropped_box["width"])
+                        rh = int(cropped_box["height"])
 
-                # วาดกรอบบนภาพ
-                import cv2 as cv2_local
-                img_with_box = ss.first_frame.copy()
-                cv2_local.rectangle(
-                    img_with_box, (rx, ry), (rx + rw, ry + rh),
-                    color=(255, 215, 0), thickness=3,
-                )
-                # วาดกากบาทตรงกลาง
-                cv2_local.drawMarker(
-                    img_with_box, (rx_center, ry_center),
-                    color=(255, 50, 50), markerType=cv2_local.MARKER_CROSS,
-                    markerSize=20, thickness=2,
-                )
+                        # Validate (กันค่า negative หรือ 0)
+                        rx = max(0, min(rx, img_w - 10))
+                        ry = max(0, min(ry, img_h - 10))
+                        rw = max(10, min(rw, img_w - rx))
+                        rh = max(10, min(rh, img_h - ry))
 
-                st.image(img_with_box, caption=f"กรอบ ROI สีทอง — ตำแหน่ง ({rx}, {ry}) ขนาด {rw}×{rh}", use_column_width=True)
+                        # ดูดสีจาก ROI
+                        ss.color_range = auto_detect_color_from_roi(
+                            ss.first_frame, rx, ry, rw, rh,
+                            h_tolerance=h_tol, s_tolerance=s_tol, v_tolerance=v_tol,
+                        )
+                        ss.color_range.label = "picked_from_roi"
 
-                # ดูดสีจาก ROI
-                ss.color_range = auto_detect_color_from_roi(
-                    ss.first_frame, rx, ry, rw, rh,
-                    h_tolerance=h_tol, s_tolerance=s_tol, v_tolerance=v_tol,
-                )
-                ss.color_range.label = "picked_from_roi"
+                        st.info(
+                            f"📌 ROI: ({rx}, {ry}, {rw}×{rh}) | "
+                            f"HSV: H=[{ss.color_range.h_low}-{ss.color_range.h_high}], "
+                            f"S=[{ss.color_range.s_low}-{ss.color_range.s_high}], "
+                            f"V=[{ss.color_range.v_low}-{ss.color_range.v_high}]"
+                        )
 
-                st.info(
-                    f"📌 HSV range: H=[{ss.color_range.h_low}-{ss.color_range.h_high}], "
-                    f"S=[{ss.color_range.s_low}-{ss.color_range.s_high}], "
-                    f"V=[{ss.color_range.v_low}-{ss.color_range.v_high}]"
-                )
+                        # แสดง preview ของ mask
+                        st.write("**Preview (สีเขียวสด = พื้นที่ที่จะถูก track):**")
+                        preview = get_mask_preview(ss.first_frame, ss.color_range)
+                        st.image(preview, use_column_width=True)
 
-                # แสดง preview ของ mask
-                st.write("**Preview (สีเขียวสด = พื้นที่ที่จะถูก track):**")
-                preview = get_mask_preview(ss.first_frame, ss.color_range)
-                st.image(preview, use_column_width=True)
-
-                pos = detect_marker_color_based(
-                    ss.first_frame, ss.color_range, min_area=min_area
-                )
-                if pos:
-                    st.success(
-                        f"✅ Marker detected at ({pos[0]:.0f}, {pos[1]:.0f}) "
-                        f"area={pos[2]:.0f}px"
+                        pos = detect_marker_color_based(
+                            ss.first_frame, ss.color_range, min_area=min_area
+                        )
+                        if pos:
+                            st.success(
+                                f"✅ Marker detected at ({pos[0]:.0f}, {pos[1]:.0f}) "
+                                f"area={pos[2]:.0f}px"
+                            )
+                        else:
+                            st.warning("⚠️ ไม่พบ marker — ลองเพิ่ม tolerance หรือขยับกรอบ")
+                except ImportError:
+                    st.error(
+                        "📦 ไม่พบ streamlit-cropper — กรุณาเพิ่มใน requirements.txt:\n\n"
+                        "`streamlit-cropper>=0.2.0`"
                     )
-                else:
-                    st.warning("⚠️ ไม่พบ marker — ลองเพิ่ม tolerance หรือเลื่อนกรอบให้ครอบ marker")
 
         # =================================================
         # MODE 2: Color Preset
@@ -368,56 +356,43 @@ with tab_track:
 
     else:
         st.subheader("🎯 CSRT Object Tracking Setup")
-        st.caption("ปรับ slider เลือกตำแหน่งและขนาดกรอบ marker ใน frame แรก")
+        st.caption("ลากกรอบรอบ marker บนภาพ — ปรับขนาดให้พอดี")
 
         img_h, img_w = ss.first_frame.shape[:2]
 
-        col_x, col_y = st.columns(2)
-        with col_x:
-            cx_center = st.slider(
-                "X center (px)", 0, img_w, img_w // 2,
-                key="csrt_x_center",
-            )
-        with col_y:
-            cy_center = st.slider(
-                "Y center (px)", 0, img_h, img_h // 2,
-                key="csrt_y_center",
-            )
+        try:
+            from streamlit_cropper import st_cropper
 
-        col_w, col_h = st.columns(2)
-        with col_w:
-            cw_box = st.slider(
-                "Width (px)", 20, min(400, img_w), 80,
-                key="csrt_w",
-            )
-        with col_h:
-            ch_box = st.slider(
-                "Height (px)", 20, min(400, img_h), 80,
-                key="csrt_h",
+            img_pil = Image.fromarray(ss.first_frame)
+            cropped_box = st_cropper(
+                img_pil,
+                realtime_update=True,
+                box_color="#e6c870",
+                aspect_ratio=None,
+                return_type="box",
+                stroke_width=3,
+                key="cropper_csrt",
             )
 
-        # คำนวณ top-left + วาดกรอบบนภาพ
-        bx = max(0, cx_center - cw_box // 2)
-        by = max(0, cy_center - ch_box // 2)
-        bw = min(cw_box, img_w - bx)
-        bh = min(ch_box, img_h - by)
+            if cropped_box is not None:
+                bx = int(cropped_box["left"])
+                by = int(cropped_box["top"])
+                bw = int(cropped_box["width"])
+                bh = int(cropped_box["height"])
 
-        import cv2 as cv2_local
-        img_with_box = ss.first_frame.copy()
-        cv2_local.rectangle(
-            img_with_box, (bx, by), (bx + bw, by + bh),
-            color=(255, 215, 0), thickness=3,
-        )
-        cv2_local.drawMarker(
-            img_with_box, (cx_center, cy_center),
-            color=(255, 50, 50), markerType=cv2_local.MARKER_CROSS,
-            markerSize=20, thickness=2,
-        )
+                bx = max(0, min(bx, img_w - 10))
+                by = max(0, min(by, img_h - 10))
+                bw = max(10, min(bw, img_w - bx))
+                bh = max(10, min(bh, img_h - by))
 
-        st.image(img_with_box, caption=f"กรอบ marker สีทอง — ตำแหน่ง ({bx}, {by}) ขนาด {bw}×{bh}", use_column_width=True)
+                ss.init_bbox = (bx, by, bw, bh)
+                st.success(f"✅ Bounding box: ({bx}, {by}, {bw}×{bh})")
+        except ImportError:
+            st.error(
+                "📦 ไม่พบ streamlit-cropper — กรุณาเพิ่มใน requirements.txt:\n\n"
+                "`streamlit-cropper>=0.2.0`"
+            )
 
-        ss.init_bbox = (bx, by, bw, bh)
-        st.success(f"✅ Bounding box: ({bx}, {by}, {bw}×{bh})")
 
 # ===================== TAB 3: TRACK =====================
 with tab_run:
