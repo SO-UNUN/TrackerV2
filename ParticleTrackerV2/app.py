@@ -367,7 +367,7 @@ with tab_track:
             cropped_box = st_cropper(
                 img_pil,
                 realtime_update=True,
-                box_color="#e6c870",
+                box_color="#12d022",
                 aspect_ratio=None,
                 return_type="box",
                 stroke_width=3,
@@ -641,11 +641,11 @@ with tab_results:
             ))
             fig_fit.add_trace(go.Scatter(
                 x=t, y=env_pos, mode="lines",
-                line=dict(color="#e6c870", dash="dash", width=1.5), name="Envelope",
+                line=dict(color="#d05212", dash="dash", width=1.5), name="Envelope",
             ))
             fig_fit.add_trace(go.Scatter(
                 x=t, y=env_neg, mode="lines",
-                line=dict(color="#e6c870", dash="dash", width=1.5), showlegend=False,
+                line=dict(color="#d05212", dash="dash", width=1.5), showlegend=False,
             ))
             fig_fit.update_layout(
                 xaxis_title="Time (s)", yaxis_title=f"Position ({unit})",
